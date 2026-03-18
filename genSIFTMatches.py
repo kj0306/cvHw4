@@ -5,16 +5,16 @@ import numpy as np
 def gen_sift_matches(imgs, imgd):
     # Convert to single precision grayscale
     if imgs.dtype == np.float32:
-        gray_s = (cv2.cvtColor(imgs, cv2.COLOR_BGR2GRAY)
+        gray_s = (cv2.cvtColor(imgs, cv2.COLOR_RGB2GRAY)
                   * 255).astype(np.uint8)
     else:
-        gray_s = cv2.cvtColor(imgs, cv2.COLOR_BGR2GRAY).astype(np.uint8)
+        gray_s = cv2.cvtColor(imgs, cv2.COLOR_RGB2GRAY).astype(np.uint8)
 
     if imgd.dtype == np.float32:
-        gray_d = (cv2.cvtColor(imgd, cv2.COLOR_BGR2GRAY)
+        gray_d = (cv2.cvtColor(imgd, cv2.COLOR_RGB2GRAY)
                   * 255).astype(np.uint8)
     else:
-        gray_d = (cv2.cvtColor(imgd, cv2.COLOR_BGR2GRAY)).astype(np.uint8)
+        gray_d = (cv2.cvtColor(imgd, cv2.COLOR_RGB2GRAY)).astype(np.uint8)
 
     # Compute SIFT keypoints and descriptors
     sift = cv2.SIFT_create()

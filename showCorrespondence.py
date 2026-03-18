@@ -26,8 +26,7 @@ def show_correspondence(orig_img, warped_img, src_pts_nx2, dest_pts_nx2):
     fig, ax = plt.subplots(figsize=(W / dpi, H / dpi), dpi=dpi)
     ax.axis('off')
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-    # cv2 loads images in BGR; convert to RGB so matplotlib displays colors correctly
-    ax.imshow(result_img[..., ::-1])
+    ax.imshow(result_img)
 
     for i in range(n):
         xs = offset_s[0] + src_pts_nx2[i, 0]
