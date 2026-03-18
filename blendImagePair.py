@@ -22,6 +22,31 @@ def blend_image_pair(wrapped_imgs, masks, wrapped_imgd, maskd, mode):
     binary_mask_s = masks > 0
     binary_mask_d = maskd > 0
 
+    if mode == "blend":
+        # Compute distance transforms for weighting
+        dist_s = bwdist(binary_mask_s)
+        dist_d = bwdist(binary_mask_d)
+
+        total = dist_s + dist_d
+        # Avoid division by zero
+        total_safe = np.where(total == 0, 1.0, total)
+
+        weight_s = np.zeros((Hs, Ws), dtype=np.float64)
+        weight_d = np.zeros((Hs, Ws), dtype=np.float64)
+
+        # In overlap region: weighted blend
+        overlap = binary_mask_s & binary_mask_d
+        weight_s[overlap] = dist_s[overlap] / total_safe[overlap]
+        weight_d[overlap] = dist_d[overlap] / total_safe[overlap]
+
+        # Only in s: full weight to s
+        only_s = binary_mask_s & ~binary_mask_d
+        weight_s[only_s] = 1.0
+
+        # Only in d: full weight to d
+        only_d = binary_mask_d & ~binary_mask_s
+        weight_d[only_d] = 1.0
+
     for c in range(Cs):
         channel_out = np.zeros((Hs, Ws), dtype=np.float64)
         S = wrapped_imgs[:, :, c]
@@ -34,11 +59,7 @@ def blend_image_pair(wrapped_imgs, masks, wrapped_imgd, maskd, mode):
             # ---------------------------
             # ADD YOUR CODE HERE
             # ---------------------------
-            #
-            # you need to compute the weighted masks (for src and dest) using
-            # bwdist, and use them to form the output image.
-            #
-            pass
+            channel_out = S * weight_s + D * weight_d
         out_img[:, :, c] = channel_out
 
     # convert out_img to right type
