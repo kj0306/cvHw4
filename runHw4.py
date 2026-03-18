@@ -44,6 +44,7 @@ def run_hw4(*args):
         "challenge1c": challenge1c,
         "challenge1d": challenge1d,
         "challenge1e": challenge1e,
+        "challenge1f": challenge1f,
     }
 
     if not args:
@@ -76,14 +77,29 @@ def honesty():
 # --------------------------------------------------------------------------
 # Debugging and Challenge Functions
 # --------------------------------------------------------------------------
+def debug1():
+    print("debug1: testing compute_homography and apply_homography")
+    src_pts = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+    dst_pts = np.array([[0.0, 0.0], [2.0, 0.0], [2.0, 2.0], [0.0, 2.0]])
+    H = compute_homography(src_pts, dst_pts)
+    print("H =", H)
+    test_pts = np.array([[0.5, 0.5]])
+    dest = apply_homography(H, test_pts)
+    print("apply_homography([0.5,0.5]) =", dest, "(expected ~[1.0, 1.0])")
+
+
 def challenge1a():
     # Load images
     orig_img = cv2.imread("portrait.png")
     warped_img = cv2.imread("portrait_transformed.png")
 
-    src_pts = get_points_from_user(orig_img, 4, "Click any 4 points")
-    dst_pts = get_points_from_user(
-        warped_img, 4, "Click corresponding 4 points")
+    # Use SIFT to find automatic correspondences (replaces manual point selection)
+    from genSIFTMatches import gen_sift_matches
+    all_src, all_dst = gen_sift_matches(orig_img, warped_img)
+
+    # Pick 4 well-spread points for computing homography
+    src_pts = all_src[:4]
+    dst_pts = all_dst[:4]
 
     # Compute homography
     H_3x3 = compute_homography(src_pts, dst_pts)
@@ -95,12 +111,8 @@ def challenge1a():
     # H, a 3x3 matrix, is the estimated homography that
     # transforms src_pts_nx2 to dest_pts_nx2.
 
-    # Choose another set of points on orig_img for testing.
-    # test_pts_nx2 should be an nx2 matrix, where n is the number of points, the
-    # first column contains the x coordinates and the second column contains
-    # the y coordinates.
-    test_pts = get_points_from_user(
-        orig_img, 5, "Click 5 test points to visualize the homography")
+    # Use the next 5 SIFT matches as test points
+    test_pts = all_src[4:9]
 
     # Apply homography
     dest_pts = apply_homography(H_3x3, test_pts)
@@ -117,19 +129,25 @@ def challenge1b():
 
     # -------------------
     # Estimate homography
-    # Choose 4 points (image corners work well) on the portrait image, and
-    # select their corresponding locations in the bg_img.
-    # You might find the getPointsFromUser function used in debug1 useful.
+    # portrait_small is 400x327 (H x W), so corners are:
+    #   top-left (0,0), top-right (326,0), bottom-right (326,399), bottom-left (0,399)
+    # Billboard in Osaka.png detected at x=84, y=18, w=199, h=420:
+    #   top-left (84,18), top-right (283,18), bottom-right (283,438), bottom-left (84,438)
     # -------------------
-    portrait_pts = np.zeros((4, 2))  # replace this
-    bg_pts = np.zeros((4, 2))  # replace this
+    portrait_pts = np.array([
+        [0.0,   0.0],
+        [326.0, 0.0],
+        [326.0, 399.0],
+        [0.0,   399.0]
+    ])
+    bg_pts = np.array([
+        [84.0,  18.0],
+        [283.0, 18.0],
+        [283.0, 438.0],
+        [84.0,  438.0]
+    ])
 
-    H = np.eye(3)
-
-    # TODO: fill points and compute homography
-    # portrait_pts = np.array([[xp1, yp1], [xp2, yp2], [xp3, yp3], [xp4, yp4]])
-    # bg_pts = np.array([[xb1, yb1], [xb2, yb2], [xb3, yb3], [xb4, yb4]])
-    # H = compute_homography(portrait_pts, bg_pts)
+    H = compute_homography(portrait_pts, bg_pts)
 
     dest_w, dest_h = bg_img.shape[1], bg_img.shape[0]
 
@@ -161,15 +179,10 @@ def challenge1c():
     cv2.imwrite("before_ransac.png", before_img)
 
     # Use RANSAC to reject outliers
-    ransac_n = 0  # placeholder
-    ransac_eps = 0.0  # placeholder
-    H_3x3 = np.eye(3)  # placeholder
+    ransac_n = 500   # Max number of iterations
+    ransac_eps = 3.0  # Acceptable alignment error in pixels
 
-    # ransac_n = ??  # TODO - Max number of iterations
-    # ransac_eps = ?  # TODO - Acceptable alignment error
-
-    (inliers_id, H_3x3) = run_ransac(xs, xd, ransac_n,
-                                     ransac_eps)  # TODO - Modify runRANSAC.py code
+    (inliers_id, H_3x3) = run_ransac(xs, xd, ransac_n, ransac_eps)
 
     if len(inliers_id) > 0:
         after_img = show_correspondence(

@@ -27,9 +27,22 @@ def backward_warp_img(src_img, resultToSrc_H, dest_canvas_width_height):
     # START ADDING YOUR CODE HERE
     # ---------------------------
 
-    # Set 'mask' to the correct values based on src_pts.
+    # Set 'mask' to True where the mapped source coordinates are valid
+    valid = (src_X >= 1) & (src_X <= src_width) & \
+            (src_Y >= 1) & (src_Y <= src_height)
+    mask = valid
 
-    # fill the right region in 'result_img' with the src_img
+    # Interpolate src_img at valid source coordinates (0-indexed row, col)
+    # map_coordinates uses (row, col) order
+    rows = src_Y.ravel() - 1  # convert to 0-indexed
+    cols = src_X.ravel() - 1
+
+    for c in range(src_channels):
+        channel = map_coordinates(src_img[:, :, c], [rows, cols],
+                                  order=1, mode='constant', cval=0.0)
+        result_channel = channel.reshape(dest_height, dest_width)
+        result_channel[~valid] = 0.0
+        result_img[:, :, c] = result_channel
 
     # ---------------------------
     # END YOUR CODE HERE

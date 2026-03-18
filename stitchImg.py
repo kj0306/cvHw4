@@ -72,14 +72,42 @@ def stitch_img(*args):
         # to register it, and warping it with the reverse transformation
         # (backward warp).
         # Use RANSAC to avoid problems caused by outliers.
-        #
-        # Run RANSAC to find homography
+
+        ransac_n = 500
+        ransac_eps = 3.0
+
+        # Run RANSAC to find homography from stitched canvas coords -> img_n coords
+        inliers_id, H_stitched_to_n = run_ransac(kp_stitched, kp_n,
+                                                  ransac_n, ransac_eps)
+
+        if len(inliers_id) < 4:
+            print(f"Warning: not enough inliers for image {n}, skipping.")
+            continue
+
+        # Backward warp img_n onto the stitched canvas
+        mask_n, warped_n = backward_warp_img(
+            img_n, H_stitched_to_n, (W_stitched, H_stitched))
+
+        # Convert to float32 to match stitched_img dtype
+        warped_n = warped_n.astype(stitched_img.dtype)
+
+        # Blend warped image into the stitched canvas
+        stitch_mask_uint8 = stitch_mask.astype(np.uint8)
+        mask_n_uint8 = mask_n.astype(np.uint8)
+
+        stitched_img = blend_image_pair(
+            stitched_img, stitch_mask_uint8,
+            warped_n, mask_n_uint8,
+            mode="blend")
+
+        # Update the overall mask
+        stitch_mask = stitch_mask | mask_n
 
         # ---------------------------------------
         # END ADD YOUR CODE HERE
         # ---------------------------------------
 
-    # OPTIONAL: remove excess padding from the output
-    # stitched_img = bbox_crop(stitched_img)
+    # Remove excess padding from the output
+    stitched_img = bbox_crop(stitched_img)
 
     return stitched_img
