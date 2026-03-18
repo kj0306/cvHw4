@@ -23,7 +23,8 @@ def show_correspondence(orig_img, warped_img, src_pts_nx2, dest_pts_nx2):
                offset_d[0]:offset_d[0]+Wd, :] = warped_img
 
     fig, ax = plt.subplots()
-    ax.imshow(result_img)
+    # cv2 loads images in BGR; convert to RGB so matplotlib displays colors correctly
+    ax.imshow(result_img[..., ::-1])
 
     for i in range(n):
         xs = offset_s[0] + src_pts_nx2[i, 0]
@@ -36,7 +37,8 @@ def show_correspondence(orig_img, warped_img, src_pts_nx2, dest_pts_nx2):
 
     # Convert figure to image array
     fig.canvas.draw()
-    result_img = np.array(fig.canvas.buffer_rgba())[..., 0:3]
+    # buffer_rgba is in RGB order; convert to BGR so cv2.imwrite saves correctly
+    result_img = np.array(fig.canvas.buffer_rgba())[..., 2::-1]
     plt.close(fig)
 
     return result_img
