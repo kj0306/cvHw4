@@ -97,11 +97,14 @@ def challenge1a():
     from genSIFTMatches import gen_sift_matches
     all_src, all_dst = gen_sift_matches(orig_img, warped_img)
 
-    # Pick 4 well-spread points for computing homography
-    src_pts = all_src[:4]
-    dst_pts = all_dst[:4]
+    # Use RANSAC to robustly compute the homography from SIFT matches
+    inliers_id, H_3x3 = run_ransac(all_src, all_dst, ransac_n=500, eps=3.0)
 
-    # Compute homography
+    # Pick 4 inlier correspondences for the "manual points" role
+    src_pts = all_src[inliers_id[:4]]
+    dst_pts = all_dst[inliers_id[:4]]
+
+    # Recompute homography on these 4 clean points as specified by the assignment
     H_3x3 = compute_homography(src_pts, dst_pts)
     # src_pts_nx2 and dest_pts_nx2 are the coordinates of corresponding points
     # of the two images, respectively. src_pts_nx2 and dest_pts_nx2
@@ -111,8 +114,8 @@ def challenge1a():
     # H, a 3x3 matrix, is the estimated homography that
     # transforms src_pts_nx2 to dest_pts_nx2.
 
-    # Use the next 5 SIFT matches as test points
-    test_pts = all_src[4:9]
+    # Use 5 more inlier points as test_pts
+    test_pts = all_src[inliers_id[4:9]]
 
     # Apply homography
     dest_pts = apply_homography(H_3x3, test_pts)
