@@ -31,7 +31,7 @@ def show_correspondence(orig_img, warped_img, src_pts_nx2, dest_pts_nx2):
         ys = offset_s[1] + src_pts_nx2[i, 1]
         xd = offset_d[0] + dest_pts_nx2[i, 0]
         yd = offset_d[1] + dest_pts_nx2[i, 1]
-        ax.plot([xs, xd], [ys, yd], linewidth=3, color='r')
+        ax.plot([xs, xd], [ys, yd], linewidth=1, color='r')
 
     plt.show()
 
